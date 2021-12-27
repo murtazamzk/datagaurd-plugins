@@ -1,5 +1,8 @@
-import React from "react";
-import styled, { css } from 'styled-components';
+import React, { useContext, useState } from "react";
+import styled from 'styled-components';
+import { useLocation, Navigate } from 'react-router-dom';
+import { AppContext } from "../store";
+import { ActionTypes } from "../constants";
 import Switch from "./Switch";
 
 const PluginsWrapper = styled.div`
@@ -24,6 +27,8 @@ const PluginBox = styled.div`
   margin-right: 40px;
   margin-top: 40px;
   width: calc(33% - 40px);
+  opacity: ${props => props.disabled ? '0.5' : '1'};
+  pointer-events: ${props => props.disabled ? 'none' : 'all'}
 `;
 
 const PluginBoxHeader = styled.div`
@@ -40,7 +45,7 @@ const PluginBoxTitle = styled.h3`
 const SwitchLabel = styled.span`
   font-size: var(--fz-xxs);
   font-weight: bold;
-  color: var(--green);
+  color: ${props => props.active  ? 'var(--green)' : 'var(--red)'};
   position: relative;
   top: -5px;
 `;
@@ -53,70 +58,76 @@ const PluginBoxDetails = styled.p`
 `;
 
 const Plugins = () => {
+
+  const { state, dispatch } = useContext(AppContext);
+  const { pathname } = useLocation();
+  const currentNav = state.navItems && state.navItems.filter((data) => data.route === pathname);
+
+  const renderTitle = () => {
+    if(state?.navItems){
+      if(currentNav.length) {
+        return currentNav[0].title;
+      }else{
+        return <Navigate to='/' />;
+      }
+    }
+  }
+
+  const updateState = (item, pluginState) => {
+    let currentState = state.navItems;
+    currentState.forEach((nav,i) => {
+      if(nav.route === pathname){
+        if(pluginState === 'Allowed') {
+          let index = currentState[i].activePlugins.indexOf(item.id);
+          if(index !== -1){
+            currentState[i].activePlugins.splice(index,1);
+          }
+          currentState[i].inActivePlugins.push(item.id);
+        }else{
+          let index = currentState[i].inActivePlugins.indexOf(item.id);
+          if(index !== -1){
+            currentState[i].inActivePlugins.splice(index,1);
+          }
+          currentState[i].activePlugins.push(item.id);
+        }
+      }
+    });
+    dispatch({
+      type: ActionTypes.SET_NAV_DATA,
+      data: currentState,
+    });
+  }
+
+  const renderSwitch = (item) => {
+    let pluginState = 'Blocked';
+    if(currentNav[0].activePlugins.includes(item.id)) {
+      pluginState = 'Allowed';
+    }
+    return (
+      <div>
+        <Switch id={item.id} checked={pluginState === 'Allowed'} onChange={() => {updateState(item, pluginState)}} />
+        <SwitchLabel active={pluginState === 'Allowed'}>{pluginState}</SwitchLabel>
+      </div>
+    )
+  }
+
+  const checkDisabled = (item) => {
+    return currentNav[0].disabledPlugins.includes(item.id);
+  }
+
   return (
     <PluginsWrapper>
-      <PageTitle>Marketing Plugins</PageTitle>
+      <PageTitle>{renderTitle()} Plugins</PageTitle>
         <BoxWrapper>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 1</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin1'} checked={true} onChange={() => {}} />
-                <SwitchLabel>Allowed</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 2</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin2'} checked={false} onChange={() => {}} />
-                <SwitchLabel>Blocked</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 1</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin1'} checked={true} onChange={() => {}} />
-                <SwitchLabel>Allowed</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 1</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin1'} checked={true} onChange={() => {}} />
-                <SwitchLabel>Allowed</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 1</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin1'} checked={true} onChange={() => {}} />
-                <SwitchLabel>Allowed</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
-          <PluginBox>
-            <PluginBoxHeader>
-              <PluginBoxTitle>Plugin 1</PluginBoxTitle>
-              <div>
-                <Switch id={'plugin1'} checked={true} onChange={() => {}} />
-                <SwitchLabel>Allowed</SwitchLabel>
-              </div>
-            </PluginBoxHeader>
-            <PluginBoxDetails>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quae amet voluptates a sed, beatae sit quia autem dolor tenetur pariatur praesentium non labore iure quos velit tempore quis. Iure, quam!</PluginBoxDetails>
-          </PluginBox>
+          {state.plugins && state.plugins.length && state.plugins.map((item) => (
+            <PluginBox disabled={checkDisabled(item)} key={item.id}>
+              <PluginBoxHeader>
+                <PluginBoxTitle>{item.title}</PluginBoxTitle>
+                {renderSwitch(item)}
+              </PluginBoxHeader>
+              <PluginBoxDetails>{item.description}</PluginBoxDetails>
+            </PluginBox>
+          ))}
         </BoxWrapper>
     </PluginsWrapper>
   );

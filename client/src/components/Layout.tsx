@@ -6,6 +6,8 @@ import Content from "./Content";
 
 const LayoutWrapper = styled.div`
   display: flex;
+  height: 100vh;
+  overflow: hidden;
 `;
 
 const Layout: React.FunctionComponent = ({ children }) => {

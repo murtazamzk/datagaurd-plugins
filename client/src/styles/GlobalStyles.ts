@@ -60,6 +60,7 @@ export const GlobalStyles = createGlobalStyle`
   .box {
     padding: 40px 0;
     height: 100vh;
+    overflow-y: auto;
   }
 
   .link {

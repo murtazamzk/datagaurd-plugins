@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import styled, { css } from 'styled-components';
 import { Link, useLocation } from 'react-router-dom';
-import { ROUTES } from '../constants';
+import { ROUTES, ActionTypes } from '../constants';
+import { AppContext } from "../store";
 import Switch from "./Switch";
 
 import Logo from "../assets/logo.svg?component";
@@ -21,12 +22,15 @@ const SidebarWrapper = styled.div`
     background: var(--grey);
     width: 30%;
     max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
 `;
 
 const Navbar = styled.div`
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
 `;
 
 const NavItem = styled(Link)`
@@ -68,38 +72,80 @@ const ToggleButtonWrapper = styled.div`
     color: var(--navyBlue);
     font-size: var(--fz-md);
     background: var(--green);
-    background: linear-gradient(to bottom, transparent 10%, var(--green) 200%);
+    background: linear-gradient(to bottom, transparent 35%, ${props => props.status === 'enabled' ? 'var(--green)' : 'var(--red)'} 200%);
 `;
 
 const Sidebar = () => {
 
+    const { state, dispatch } = useContext(AppContext);
     const { pathname } = useLocation();
-    const [checked,setChecked] = useState(false);
-    
+    const currentNav = state.navItems && state.navItems.filter((data) => data.route === pathname);
+
+    let status = 'disabled';
+
     const getClassName = (path) => {
         return path === pathname ? 'active' : '';
+    }
+
+    const renderIcon = (route) => {
+        switch(route) {
+            case ROUTES.MARKETING:
+                return <AppIcon />
+            case ROUTES.FINANCE:
+                return <FilterIcon />
+            case ROUTES.PERSONNEL:
+                return <CheckIcon />
+            default:
+                return <AppIcon />;
+        }
+    }
+
+    const renderToggleBtn = () => {
+        if(currentNav && currentNav.length){
+            if(currentNav[0].activePlugins.length === 0) {
+                status = 'disabled';
+            }else if(currentNav[0].inActivePlugins.length === 0){
+                status = 'enabled';
+            }
+        }
+        return (
+            <ToggleButtonWrapper status={status}>
+                <span>All plugins {status}</span>
+                <Switch id={'mainSwitch'} checked={status === 'enabled'} onChange={() => {toggleState()}} size={'big'} />
+            </ToggleButtonWrapper>
+        )
+    }
+
+    const toggleState = () => {
+        let currentState = state.navItems;
+        currentState.forEach((nav,i) => {
+            if(nav.route === pathname){
+                if(status === 'enabled') {
+                    currentState[i].inActivePlugins.push(...currentState[i].activePlugins);
+                    currentState[i].activePlugins = [];
+                }else{
+                    currentState[i].activePlugins.push(...currentState[i].inActivePlugins);
+                    currentState[i].inActivePlugins = [];
+                }
+            }
+        });
+        dispatch({
+            type: ActionTypes.SET_NAV_DATA,
+            data: currentState,
+        });
     }
 
     return (
         <SidebarWrapper className="box">
             <LogoImage />
             <Navbar>
-                <NavItem to={ROUTES.MARKETING} className={getClassName('/marketing')}>
-                    <AppIcon />
-                    <span>Marketing</span>
-                </NavItem>
-                <NavItem to={ROUTES.FINANCE} className={getClassName('/finance')}>
-                    <FilterIcon />
-                    <span>Finance</span>
-                </NavItem>
-                <NavItem to={ROUTES.PERSONAL} className={getClassName('/personal')}>
-                    <CheckIcon />
-                    <span>Personal</span>
-                </NavItem>
-                <ToggleButtonWrapper>
-                    <span>All plugins enabled</span>
-                    <Switch id={'mainSwitch'} checked={checked} onChange={() => setChecked(!checked)} size={'big'} />
-                </ToggleButtonWrapper>
+                {state.navItems && state.navItems.map((nav) => (
+                    <NavItem key={nav.route} to={nav.route} className={getClassName(nav.route)}>
+                        {renderIcon(nav.route)}
+                        <span>{nav.title}</span>
+                    </NavItem>
+                ))}
+                {renderToggleBtn()}
             </Navbar>
         </SidebarWrapper>
     );
